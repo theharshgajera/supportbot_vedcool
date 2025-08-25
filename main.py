@@ -1,6 +1,9 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import logging
+import os
+import pickle
+import numpy as np
 
 # import everything from chatbot.py
 from chatbot import (
@@ -12,7 +15,12 @@ from chatbot import (
     EMBEDDINGS_CACHE_FILE,
     MAX_TOKENS_FOR_EMBEDDING
 )
-import os, pickle, numpy as np
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s"
+)
 
 # FastAPI app
 app = FastAPI(title="VedCool Chatbot API")
@@ -33,6 +41,7 @@ if os.path.exists(EMBEDDINGS_CACHE_FILE):
             section_data_for_chatbot = cached
     except Exception as e:
         logging.warning(f"Error loading embeddings cache: {e}")
+        pass  # continue with fresh embeddings
 
 if not section_data_for_chatbot:
     logging.info("Computing embeddings fresh...")
@@ -64,10 +73,7 @@ async def ask_question(data: QuestionRequest):
             threshold=0.40,
             top_n=3,
         )
-        return {
-            "question": q,
-            "answer": answer,
-        }
+        return {"question": q, "answer": answer}
     except Exception as e:
         logging.error(f"Error answering question: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal error processing question")
