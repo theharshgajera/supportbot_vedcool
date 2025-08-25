@@ -1,34 +1,34 @@
 import re
 import numpy as np
 from scipy.spatial.distance import cosine
-import openai
+import google.generativeai as genai
 import logging
 import pickle
 import os
 import time
 import sys
-import tiktoken
 from tenacity import retry, stop_after_attempt, wait_random_exponential, retry_if_exception_type
 
 # --- Configuration & Setup ---
-# IMPORTANT: Replace with your actual OpenAI API key
-OPENAI_API_KEY = "sk-proj-d6WlTjoiW69RK10pNgbgT3BlbkFJsonFhBa5cGVRied8nmKr"  # Replace this with your real API key
+# IMPORTANT: Replace with your actual Google AI API key
+GEMINI_API_KEY = "AIzaSyC8dr5mMStzh8Epu1mCZvXv2rAX08v3Wk4"  # Replace this with your real Gemini API key
 
-if OPENAI_API_KEY == "YOUR_ACTUAL_OPENAI_API_KEY" or not OPENAI_API_KEY.startswith("sk-"):
-    logging.error("CRITICAL ERROR: Please replace 'YOUR_ACTUAL_OPENAI_API_KEY' with your actual OpenAI API key in the script.")
-    print("CRITICAL ERROR: Please replace 'YOUR_ACTUAL_OPENAI_API_KEY' with your actual OpenAI API key in the script.")
+if GEMINI_API_KEY == "YOUR_ACTUAL_GEMINI_API_KEY" or not GEMINI_API_KEY:
+    logging.error("CRITICAL ERROR: Please replace 'YOUR_ACTUAL_GEMINI_API_KEY' with your actual Gemini API key in the script.")
+    print("CRITICAL ERROR: Please replace 'YOUR_ACTUAL_GEMINI_API_KEY' with your actual Gemini API key in the script.")
     sys.exit(1)
 
-client = openai.OpenAI(api_key=OPENAI_API_KEY)
+# Configure Gemini API
+genai.configure(api_key=GEMINI_API_KEY)
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-EMBEDDINGS_CACHE_FILE = "openai_embeddings_cache.pkl"
-EMBEDDING_MODEL = "text-embedding-3-small"
-CHAT_MODEL = "gpt-3.5-turbo"
-MAX_TOKENS_FOR_EMBEDDING = 8190
+EMBEDDINGS_CACHE_FILE = "gemini_embeddings_cache.pkl"
+EMBEDDING_MODEL = "models/text-embedding-004"  # Gemini embedding model
+CHAT_MODEL = "gemini-1.5-flash"  # Gemini chat model
+MAX_TOKENS_FOR_EMBEDDING = 8000  # Adjusted for Gemini
 
-# --- Manual Text (Ensure your full manual_text is here) ---
+# --- Manual Text (Replace with your full manual content) ---
 manual_text = """TABLE OF CONTENT
 INTRODUCTION ............................................................................................................................................. 4
 Overview of VedCool Platform ..................................................................................................................... 4
@@ -1492,65 +1492,48 @@ Adjust additional configurations. Accessing Module Permissions
 """ # Make sure to use your full manual_text here
 
 # --- Helper Functions ---
-def get_tokenizer():
-    """Gets a tokenizer for the specified OpenAI model."""
-    try:
-        return tiktoken.encoding_for_model(EMBEDDING_MODEL)
-    except KeyError:
-        logging.warning(f"Tokenizer for model {EMBEDDING_MODEL} not found. Using cl100k_base.")
-        return tiktoken.get_encoding("cl100k_base")
-
-tokenizer = get_tokenizer()
-
 def truncate_text_to_tokens(text: str, max_tokens: int) -> str:
-    """Truncates text to a maximum number of tokens."""
-    tokens = tokenizer.encode(text)
-    if len(tokens) > max_tokens:
-        truncated_tokens = tokens[:max_tokens]
-        return tokenizer.decode(truncated_tokens)
+    """Truncates text to approximate token count (rough estimation for Gemini)."""
+    # Simple approximation: 1 token ≈ 4 characters for most languages
+    max_chars = max_tokens * 4
+    if len(text) > max_chars:
+        return text[:max_chars]
     return text
 
-# --- Core OpenAI API Functions with Tenacity Retries ---
+# --- Core Gemini API Functions with Tenacity Retries ---
 @retry(
     wait=wait_random_exponential(min=1, max=30),
     stop=stop_after_attempt(5),
-    retry=retry_if_exception_type((openai.RateLimitError, openai.APIConnectionError, openai.APITimeoutError))
+    retry=retry_if_exception_type((Exception,))  # Gemini may raise different exceptions
 )
 def get_embedding_with_retry(text: str, model: str = EMBEDDING_MODEL):
     if not text or not text.strip():
         logging.warning("Attempted to get embedding for empty text.")
         return None
     try:
-        response = client.embeddings.create(input=[text], model=model)
-        return np.array(response.data[0].embedding)
-    except openai.RateLimitError as e:
-        logging.error(f"OpenAI RateLimitError for embedding: {e}")
-        raise
+        result = genai.embed_content(
+            model=model,
+            content=text,
+            task_type="retrieval_document"
+        )
+        return np.array(result['embedding'])
     except Exception as e:
-        logging.error(f"Error generating OpenAI embedding: {e}")
-        return None
+        logging.error(f"Error generating Gemini embedding: {e}")
+        raise
 
 @retry(
     wait=wait_random_exponential(min=1, max=60),
     stop=stop_after_attempt(3),
-    retry=retry_if_exception_type((openai.RateLimitError, openai.APIConnectionError, openai.APITimeoutError))
+    retry=retry_if_exception_type((Exception,))
 )
 def generate_response_with_retry(prompt: str, model: str = CHAT_MODEL):
     try:
-        response = client.chat.completions.create(
-            model=model,
-            messages=[
-                {"role": "system", "content": "You are a highly professional and helpful AI assistant for the VedCool platform. Your responses should be clear, accurate, easy to understand, and based strictly on the context provided by the user. If the context doesn't provide the answer, state that clearly and politely."},
-                {"role": "user", "content": prompt}
-            ]
-        )
-        return response.choices[0].message.content
-    except openai.RateLimitError as e:
-        logging.error(f"OpenAI RateLimitError for chat completion: {e}")
-        raise
+        model_instance = genai.GenerativeModel(model)
+        response = model_instance.generate_content(prompt)
+        return response.text
     except Exception as e:
-        logging.error(f"Error generating OpenAI response: {e}")
-        return "Sorry, I encountered an error while processing your request with OpenAI. Please check the logs or try again later."
+        logging.error(f"Error generating Gemini response: {e}")
+        raise
 
 # --- Manual Parsing Function ---
 def parse_manual(manual_text_content: str):
@@ -1627,12 +1610,12 @@ def parse_manual(manual_text_content: str):
         first_toc_heading_upper = extracted_headings_info[0][1]
         try:
             first_heading_actual_pos = -1
-            for i in range(content_search_start_offset, len(content_lines_upper_stripped)): # Search after TOC
+            for i in range(content_search_start_offset, len(content_lines_upper_stripped)):
                 if content_lines_upper_stripped[i] == first_toc_heading_upper and len(content_lines_stripped[i]) < 150:
                     first_heading_actual_pos = i
                     break
             if first_heading_actual_pos != -1:
-                 content_search_start_offset = first_heading_actual_pos # Start main search from this found heading
+                 content_search_start_offset = first_heading_actual_pos
                  logging.info(f"Adjusted content search start offset based on first TOC heading '{extracted_headings_info[0][0]}' found at line ~{first_heading_actual_pos}.")
             else:
                  logging.warning(f"First TOC heading '{extracted_headings_info[0][0]}' not definitively found after TOC. Using default content search offset after TOC block.")
@@ -1646,12 +1629,11 @@ def parse_manual(manual_text_content: str):
         found_line_idx = -1
         try:
             for i in range(current_search_line, len(content_lines_upper_stripped)):
-                if i in found_headings_indices: # Skip if this line index was already used for a heading
+                if i in found_headings_indices:
                     continue
                 if content_lines_upper_stripped[i] == match_heading_upper and len(content_lines_stripped[i]) < 150 :
                     found_line_idx = i
-                    found_headings_indices.add(i) # Mark this line index as used
-                    # current_search_line = i + 1 # Next search starts after this
+                    found_headings_indices.add(i)
                     break 
             
             if found_line_idx != -1:
@@ -1660,9 +1642,8 @@ def parse_manual(manual_text_content: str):
                 logging.warning(f"Heading '{display_heading}' (uppercase: '{match_heading_upper}') not found as a standalone heading in manual content (searched from line {current_search_line}).")
         except Exception as e:
             logging.error(f"Error finding position for heading '{display_heading}': {e}")
-        if found_line_idx != -1 : # Advance search line only if something was found, to allow retries for overlapping names if needed.
+        if found_line_idx != -1 :
              current_search_line = found_line_idx + 1
-
 
     section_positions.sort(key=lambda x: x[1])
 
@@ -1693,9 +1674,18 @@ def parse_manual(manual_text_content: str):
 
 # --- Q&A Function ---
 def answer_question(question: str, section_data: list, threshold=0.40, top_n=3):
-    logging.info(f"Embedding question for OpenAI: '{question}'")
-    question_embedding = get_embedding_with_retry(text=question)
-    if question_embedding is None:
+    logging.info(f"Embedding question for Gemini: '{question}'")
+    
+    # Get question embedding for retrieval
+    try:
+        result = genai.embed_content(
+            model=EMBEDDING_MODEL,
+            content=question,
+            task_type="retrieval_query"
+        )
+        question_embedding = np.array(result['embedding'])
+    except Exception as e:
+        logging.error(f"Error generating question embedding: {e}")
         return "I encountered an issue processing your question with the embedding model. Please try again."
 
     similarities = []
@@ -1760,7 +1750,7 @@ def answer_question(question: str, section_data: list, threshold=0.40, top_n=3):
         f"USER'S QUESTION: \"{question}\"\n\n"
         f"PROFESSIONAL AND CLEAR ANSWER:"
     )
-    logging.info(f"Generating OpenAI response using section(s): {', '.join(log_message_context_parts)}")
+    logging.info(f"Generating Gemini response using section(s): {', '.join(log_message_context_parts)}")
     response = generate_response_with_retry(prompt=prompt_for_llm)
     return response
 
@@ -1783,33 +1773,33 @@ if __name__ == "__main__":
                (not loaded_data or \
                 (all(isinstance(item, tuple) and len(item) == 3 and isinstance(item[0], str) and isinstance(item[1], str) and isinstance(item[2], np.ndarray) for item in loaded_data))):
                 section_data_for_chatbot = loaded_data
-                logging.info(f"Loaded {len(section_data_for_chatbot)} OpenAI embeddings from cache: {EMBEDDINGS_CACHE_FILE}")
+                logging.info(f"Loaded {len(section_data_for_chatbot)} Gemini embeddings from cache: {EMBEDDINGS_CACHE_FILE}")
             else:
-                logging.warning(f"Cached OpenAI data in '{EMBEDDINGS_CACHE_FILE}' is not in the expected format. Recomputing.")
+                logging.warning(f"Cached Gemini data in '{EMBEDDINGS_CACHE_FILE}' is not in the expected format. Recomputing.")
                 section_data_for_chatbot = []
 
             if section_data_for_chatbot:
                 if len(section_data_for_chatbot) != len(parsed_manual_sections):
-                    logging.warning(f"Cached OpenAI embeddings count ({len(section_data_for_chatbot)}) does not match current parsed sections count ({len(parsed_manual_sections)}). Recomputing all.")
+                    logging.warning(f"Cached Gemini embeddings count ({len(section_data_for_chatbot)}) does not match current parsed sections count ({len(parsed_manual_sections)}). Recomputing all.")
                     section_data_for_chatbot = []
                 else:
                     cached_headings = [item[0] for item in section_data_for_chatbot]
                     parsed_headings = [item[0] for item in parsed_manual_sections]
                     if cached_headings != parsed_headings:
-                        logging.warning("Headings or their order in OpenAI cache do not match current parsed headings. Recomputing all.")
+                        logging.warning("Headings or their order in Gemini cache do not match current parsed headings. Recomputing all.")
                         section_data_for_chatbot = []
         except (pickle.UnpicklingError, EOFError, AttributeError, ImportError, IndexError, TypeError) as e:
-            logging.error(f"Error loading or validating OpenAI embeddings cache '{EMBEDDINGS_CACHE_FILE}': {e}. Recomputing.")
+            logging.error(f"Error loading or validating Gemini embeddings cache '{EMBEDDINGS_CACHE_FILE}': {e}. Recomputing.")
             section_data_for_chatbot = []
         except Exception as e:
-            logging.error(f"Unexpected error loading or validating OpenAI embeddings cache '{EMBEDDINGS_CACHE_FILE}': {e}. Recomputing.")
+            logging.error(f"Unexpected error loading or validating Gemini embeddings cache '{EMBEDDINGS_CACHE_FILE}': {e}. Recomputing.")
             section_data_for_chatbot = []
 
     if not section_data_for_chatbot:
-        logging.info("Computing OpenAI embeddings for manual sections...")
+        logging.info("Computing Gemini embeddings for manual sections...")
         temp_section_data = []
         for i, (heading, content) in enumerate(parsed_manual_sections):
-            logging.info(f"Processing section {i+1}/{len(parsed_manual_sections)}: '{heading}' for OpenAI embedding.")
+            logging.info(f"Processing section {i+1}/{len(parsed_manual_sections)}: '{heading}' for Gemini embedding.")
             text_to_embed = f"Section Title: {heading}\n\nContent:\n{content}"
             truncated_text = truncate_text_to_tokens(text_to_embed, MAX_TOKENS_FOR_EMBEDDING)
             if len(truncated_text) < len(text_to_embed):
@@ -1824,7 +1814,7 @@ if __name__ == "__main__":
                 if embedding_array is not None and embedding_array.size > 0:
                     temp_section_data.append((heading, content, embedding_array))
                 else:
-                    logging.warning(f"Failed to compute or got empty/invalid OpenAI embedding for section: {heading}. It will be excluded.")
+                    logging.warning(f"Failed to compute or got empty/invalid Gemini embedding for section: {heading}. It will be excluded.")
             except Exception as e:
                  logging.error(f"All retries failed for embedding section '{heading}': {e}. This section will be excluded.")
 
@@ -1834,17 +1824,17 @@ if __name__ == "__main__":
             try:
                 with open(EMBEDDINGS_CACHE_FILE, 'wb') as f:
                     pickle.dump(section_data_for_chatbot, f)
-                logging.info(f"OpenAI embeddings computed and saved to cache: {EMBEDDINGS_CACHE_FILE}")
+                logging.info(f"Gemini embeddings computed and saved to cache: {EMBEDDINGS_CACHE_FILE}")
             except Exception as e:
-                logging.error(f"Error saving OpenAI embeddings to cache '{EMBEDDINGS_CACHE_FILE}': {e}")
+                logging.error(f"Error saving Gemini embeddings to cache '{EMBEDDINGS_CACHE_FILE}': {e}")
         else:
-            logging.error("No OpenAI embeddings were successfully computed for any section. The chatbot may not function correctly.")
+            logging.error("No Gemini embeddings were successfully computed for any section. The chatbot may not function correctly.")
 
     if section_data_for_chatbot:
-        print("\nVedCool Chatbot (OpenAI Edition - Highly Enhanced) is ready! Ask your question.")
+        print("\nVedCool Chatbot (Gemini Edition) is ready! Ask your question.")
         print("Type 'exit' or 'quit' to stop.")
-        print(f"Using threshold: 0.40, top_n: 3 for context retrieval. (These are experimental values)")
-        print("Note: API usage is subject to OpenAI quotas and billing.\n")
+        print(f"Using threshold: 0.40, top_n: 3 for context retrieval.")
+        print("Note: API usage is subject to Google AI quotas and billing.\n")
         while True:
             try:
                 question = input("Your question: ").strip()
@@ -1855,8 +1845,7 @@ if __name__ == "__main__":
                     print("Please enter a valid question.")
                     continue
 
-                logging.info(f"--- Processing question with OpenAI: {question} ---")
-                # NOTE: These are experimental values. You might need to tune them.
+                logging.info(f"--- Processing question with Gemini: {question} ---")
                 answer = answer_question(question, section_data_for_chatbot, threshold=0.40, top_n=3)
                 print(f"\nResponse:\n{answer}\n")
 
@@ -1867,5 +1856,5 @@ if __name__ == "__main__":
                 logging.error(f"Unexpected error in main loop: {e}", exc_info=True)
                 print("An unexpected error occurred. Please check the logs and try again.")
     else:
-        logging.error("Cannot start chatbot as no section data with OpenAI embeddings is available.")
+        logging.error("Cannot start chatbot as no section data with Gemini embeddings is available.")
         print("Error: No section data available to answer questions. Please check logs for parsing or embedding errors. The manual might be empty or unparseable.")
