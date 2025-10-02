@@ -21,8 +21,8 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 
 EMBEDDINGS_CACHE_FILE = "gemini_embeddings_cache.pkl"
 EMBEDDING_MODEL = "models/text-embedding-004"
-CHAT_MODEL = "gemini-1.5-flash"
-MAX_TOKENS_FOR_EMBEDDING = 8000
+CHAT_MODEL = "gemini-2.0-flash"
+MAX_TOKENS_FOR_EMBEDDING = 4000
 
 # --- Manual Text (Replace with your full manual content) ---
 manual_text = """
