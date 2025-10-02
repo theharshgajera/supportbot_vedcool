@@ -10,8 +10,9 @@ import sys
 from tenacity import retry, stop_after_attempt, wait_random_exponential, retry_if_exception_type
 
 # --- Configuration & Setup ---
-# IMPORTANT: Replace with your actual Google AI API key
-GEMINI_API_KEY = "AIzaSyC8dr5mMStzh8Epu1mCZvXv2rAX08v3Wk4"  # Replace this with your real Gemini API key
+from dotenv import load_dotenv
+load_dotenv()
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
 if GEMINI_API_KEY == "YOUR_ACTUAL_GEMINI_API_KEY" or not GEMINI_API_KEY:
     logging.error("CRITICAL ERROR: Please replace 'YOUR_ACTUAL_GEMINI_API_KEY' with your actual Gemini API key in the script.")
