@@ -10,22 +10,146 @@ import sys
 from tenacity import retry, stop_after_attempt, wait_random_exponential, retry_if_exception_type
 
 # --- Configuration & Setup ---
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "YOUR_ACTUAL_GEMINI_API_KEY")  # Use environment variable
+# IMPORTANT: Replace with your actual Google AI API key
+GEMINI_API_KEY = ""  # Replace this with your real Gemini API key
+
 if GEMINI_API_KEY == "YOUR_ACTUAL_GEMINI_API_KEY" or not GEMINI_API_KEY:
-    logging.error("CRITICAL ERROR: Please set GEMINI_API_KEY environment variable or replace 'YOUR_ACTUAL_GEMINI_API_KEY' with a valid key.")
-    print("CRITICAL ERROR: Please set GEMINI_API_KEY environment variable or replace 'YOUR_ACTUAL_GEMINI_API_KEY' with a valid key.")
+    logging.error("CRITICAL ERROR: Please replace 'YOUR_ACTUAL_GEMINI_API_KEY' with your actual Gemini API key in the script.")
+    print("CRITICAL ERROR: Please replace 'YOUR_ACTUAL_GEMINI_API_KEY' with your actual Gemini API key in the script.")
     sys.exit(1)
 
+# Configure Gemini API
 genai.configure(api_key=GEMINI_API_KEY)
+
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 EMBEDDINGS_CACHE_FILE = "gemini_embeddings_cache.pkl"
-EMBEDDING_MODEL = "models/text-embedding-004"
-CHAT_MODEL = "gemini-2.0-flash"
-MAX_TOKENS_FOR_EMBEDDING = 4000
+EMBEDDING_MODEL = "models/text-embedding-004"  # Gemini embedding model
+CHAT_MODEL = "gemini-2.0-flash"  # Gemini chat model
+MAX_TOKENS_FOR_EMBEDDING = 8000  # Adjusted for Gemini
 
 # --- Manual Text (Replace with your full manual content) ---
-manual_text = """
+
+manual_text = """TABLE OF CONTENT
+INTRODUCTION ............................................................................................................................................. 4
+Overview of VedCool Platform ..................................................................................................................... 4
+Overview of the Branch Admin Role............................................................................................................. 4
+BRANCH ADMIN................................................................-xl......................................................................... 5
+Login .......................................................................................................................................................... 5
+Setting Up Profile ...................................................................................................................................... 6
+Update Profile & Change Password .......................................................................................................... 7
+Dashboard ...................................................................................................................................................... 9
+Academic Insights .................................................................................................................................... 10
+Operational Insights ................................................................................................................................. 10
+Financial Overview & Events .................................................................................................................. 11
+ADMISSION ............................................................................................................................................... 12
+Create Admission ..................................................................................................................................... 12
+Multiple Import ........................................................................................................................................ 14
+Category ................................................................................................................................................... 15
+  User Manual 
+1
+
+STUDENT DETAILS .................................................................................................................................. 15
+Student List .............................................................................................................................................. 15
+View the Student Details .......................................................................................................................... 16
+Inquiry List............................................................................................................................................... 18
+ID Card..................................................................................................................................................... 20
+Login Deactivate ...................................................................................................................................... 20
+VEDCOOL LEARN .................................................................................................................................... 21
+VIRTUAL CLASS ....................................................................................................................................... 25
+PARENTS .................................................................................................................................................... 26
+Parent List ................................................................................................................................................ 26
+Add Parent ............................................................................................................................................... 29
+Login Deactivate ...................................................................................................................................... 30
+EMPLOYEE ................................................................................................................................................ 31
+Add Department ....................................................................................................................................... 31
+Add Design .............................................................................................................................................. 32
+Add Employee ......................................................................................................................................... 34
+Employee List .......................................................................................................................................... 35
+Login Deactivate ...................................................................................................................................... 36
+HR (HUMAN RESOURCE) ....................................................................................................................... 36
+Pyroll ........................................................................................................................................................ 36
+Advance Salary ........................................................................................................................................ 38
+Leave ........................................................................................................................................................ 39
+Certification ............................................................................................................................................. 40
+ACADEMIC ................................................................................................................................................ 40
+Standard Section ...................................................................................................................................... 40
+Subject...................................................................................................................................................... 41
+Timetable ................................................................................................................................................. 42
+Promotion ................................................................................................................................................. 42
+LIVE CLASSROOMS ................................................................................................................................. 43
+ATTACHMENTS / BOOKS ........................................................................................................................ 44
+Attachment Type ...................................................................................................................................... 44
+Upload Content ........................................................................................................................................ 45
+HOMEWORK.............................................................................................................................................. 46
+Assigning Homework .............................................................................................................................. 46
+Homework Evaluation Report ................................................................................................................. 46
+EXAM MASTER......................................................................................................................................... 47
+  User Manual
+2
+
+Exam Setup .............................................................................................................................................. 47
+Exam Timetable ....................................................................................................................................... 49
+Marks ....................................................................................................................................................... 49
+SUPERVISION ............................................................................................................................................ 50
+Managing Hostel ...................................................................................................................................... 50
+Transport .................................................................................................................................................. 53
+ATTENDANCE ........................................................................................................................................... 55
+Student Attendance .................................................................................................................................. 55
+Employee Attendance .............................................................................................................................. 56
+Exam Attendance ..................................................................................................................................... 56
+LIBRARY .................................................................................................................................................... 56
+Books Category ........................................................................................................................................ 56
+Books Management ................................................................................................................................. 57
+My Issued Books...................................................................................................................................... 57
+Book Issue / Return .................................................................................................................................. 58
+EVENT ........................................................................................................................................................ 58
+Event Type ............................................................................................................................................... 58
+Creating & Managing Events................................................................................................................... 59
+BULK SMS AND EMAIL........................................................................................................................... 59
+Sending SMS / Email ............................................................................................................................... 59
+SMS / Email Report ................................................................................................................................. 60
+SMS Template .......................................................................................................................................... 61
+Email Templates ....................................................................................................................................... 61
+STUDENT ACCOUNTING ........................................................................................................................ 62
+Fee Type / Group ...................................................................................................................................... 62
+Fine Setup ................................................................................................................................................ 63
+Fee Allocation .......................................................................................................................................... 63
+Fee Payment / Invoice .............................................................................................................................. 64
+Due Fees Invoice...................................................................................................................................... 64
+Fee Reminder ........................................................................................................................................... 65
+OFFICE ACCOUNTING............................................................................................................................. 65
+Account Management .............................................................................................................................. 66
+Voucher Head ........................................................................................................................................... 66
+New Deposit............................................................................................................................................. 67
+New Expense ........................................................................................................................................... 68
+All Transaction ......................................................................................................................................... 69
+  User Manual
+3
+
+MESSAGES ................................................................................................................................................. 69
+Sending Messages .................................................................................................................................... 69
+REPORTS .................................................................................................................................................... 70
+Fee Reports .............................................................................................................................................. 70
+Financial Reports ..................................................................................................................................... 73
+Attendance Reports .................................................................................................................................. 78
+Human Resource Report .......................................................................................................................... 79
+Examination Reports ................................................................................................................................ 81
+SETTINGS ................................................................................................................................................... 83
+Global Settings ......................................................................................................................................... 83
+School Settings......................................................................................................................................... 84
+Role Permission ....................................................................................................................................... 85
+Session Settings ....................................................................................................................................... 86
+Translations .............................................................................................................................................. 87
+Cron Job ................................................................................................................................................... 88
+Custom Fields .......................................................................................................................................... 88
+Database Backup ...................................................................................................................................... 89
+System Update ......................................................................................................................................... 90
+MODULE PERMISSION ............................................................................................................................ 90
+
+  User Manual
+4
+
 INTRODUCTION
 Overview of VedCool Platform
 VedCool is a cutting-edge educational platform designed to simplify and enhance the management of
@@ -618,6 +742,8 @@ Subject
 • Add, manage or assign subjects for specific standards.
 • Click Save after entering details.
 • View the Teacher Assign List, you can copy, save or print the list also.
+  User Manual
+42
 
 Timetable
 • Navigate to Academic > Timetable.
@@ -625,6 +751,9 @@ Timetable
 • Save the timetable.
 Promotion
 • Go to Academic > Promotion.
+  User Manual
+43
+
 • Select the standard and students to be promoted.
 • Click Promation.
 
@@ -635,7 +764,8 @@ students can join, participate, and access recorded lectures. This module enhanc
 engagement.
 • Setting up Live Classroom
 • Navigate to Live Classrooms.
-
+  User Manual
+44
 
 • Configure the settings for live classrooms, such as linking a platform.
 • Click Save.
@@ -649,12 +779,14 @@ issuance records. Librarians can add, update, and track books, while students an
 and request book issues. This module ensures efficient library management and seamless book tracking.
 Attachment Type
 • Navigate to Attachments/Books > Attachment Type.
-
+  User Manual
+45
 
 • Add or edit attachment types.
 Upload Content
 • Go to Attachments/Books > Upload Content.
-
+  User Manual
+46
 
 • Upload documents or study materials.
 • Click Submit.
@@ -669,6 +801,8 @@ Assigning Homework
 • Click Assign.
 Homework Evaluation Report
 • Go to Homework > Evaluation Report.
+  User Manual
+47
 
 • View or download the reports.
 
@@ -681,9 +815,14 @@ Exam Setup
 • Add Exam term details.
 • Add details like exam name, date, and classes involved.
 • Add Exam Hall Details, add the necessary details and then you can view the Exam Hall List.
+  User Manual
+48
+
 • Click Save.
 • Add the distribution details by licking the Distribution
 • Create a Exam by clicking Exam Setup
+  User Manual
+49
 
 Exam Timetable
 • Go to Exam Master > Exam Timetable.
@@ -692,6 +831,16 @@ Exam Timetable
 • Save the changes.
 Marks
 • Navigate to Exam Master > Marks Entry.
+
+
+
+
+
+
+
+  User Manual
+50
+
 • Enter marks for exams and click Save.
 • Create the Grade, by filling the necessary details and then click on save button.
 
@@ -708,7 +857,8 @@ Managing Hostel
 • Enter details such as:
 • Category Name (e.g., Boys Hostel, Girls Hostel, Staff Quarters).
 • Hostel Type (Day Boarding, Residential).
-
+  User Manual
+51
 
 • Facilities provided in the hostel.
 •  Click Save to store the category details.
@@ -724,6 +874,8 @@ Managing Hostel
 • Click Save to finalize the hostel master setup.
 • Navigate to Supervision > Hostel > Hostel Room.
 • Click Add New Room.
+  User Manual
+52
 
 
 • Enter room details such as:
@@ -1299,6 +1451,8 @@ Used for adding extra fields to forms (students, employees, fees).
 • Navigate to Settings > Custom Fields
 • Go to Settings > Custom Fields.
 
+  User Manual
+89
 
 Add New Fields
 • Choose Module (Students, Admissions, Employees, Fees).
@@ -1336,14 +1490,14 @@ Adjust additional configurations. Accessing Module Permissions
 • Log in as an administrator.
 • Go to Settings > Role Permission.
 • Click on Module Permission.
-"""
-
+""" # Make sure to use your full manual_text here
 
 # --- Helper Functions ---
 def truncate_text_to_tokens(text: str, max_tokens: int) -> str:
+    """Truncates text to approximate token count (rough estimation for Gemini)."""
+    # Simple approximation: 1 token ≈ 4 characters for most languages
     max_chars = max_tokens * 4
     if len(text) > max_chars:
-        logging.warning(f"Truncating text from {len(text)} to {max_chars} characters.")
         return text[:max_chars]
     return text
 
@@ -1351,7 +1505,7 @@ def truncate_text_to_tokens(text: str, max_tokens: int) -> str:
 @retry(
     wait=wait_random_exponential(min=1, max=30),
     stop=stop_after_attempt(5),
-    retry=retry_if_exception_type((Exception,))
+    retry=retry_if_exception_type((Exception,))  # Gemini may raise different exceptions
 )
 def get_embedding_with_retry(text: str, model: str = EMBEDDING_MODEL):
     if not text or not text.strip():
@@ -1363,13 +1517,23 @@ def get_embedding_with_retry(text: str, model: str = EMBEDDING_MODEL):
             content=text,
             task_type="retrieval_document"
         )
-        embedding = np.array(result['embedding'])
-        if embedding.size == 0:
-            logging.error("Received empty embedding from API.")
-            return None
-        return embedding
+        return np.array(result['embedding'])
     except Exception as e:
-        logging.error(f"Failed to generate embedding: {str(e)}")
+        logging.error(f"Error generating Gemini embedding: {e}")
+        raise
+
+@retry(
+    wait=wait_random_exponential(min=1, max=60),
+    stop=stop_after_attempt(3),
+    retry=retry_if_exception_type((Exception,))
+)
+def generate_response_with_retry(prompt: str, model: str = CHAT_MODEL):
+    try:
+        model_instance = genai.GenerativeModel(model)
+        response = model_instance.generate_content(prompt)
+        return response.text
+    except Exception as e:
+        logging.error(f"Error generating Gemini response: {e}")
         raise
 
 # --- Manual Parsing Function ---
@@ -1378,7 +1542,7 @@ def parse_manual(manual_text_content: str):
     try:
         toc_start_idx = next(i for i, line in enumerate(lines) if line.strip().upper() == "TABLE OF CONTENT")
     except StopIteration:
-        logging.error("Table of Contents not found in manual.")
+        logging.error("Table of Contents (TABLE OF CONTENT) not found in manual.")
         return []
 
     toc_entry_pattern = re.compile(r"^(.*?)\s*\.{3,}\s*(\d+)\s*$")
@@ -1401,23 +1565,24 @@ def parse_manual(manual_text_content: str):
             heading_text_candidate = match.group(1).strip()
             if not heading_text_candidate.isdigit() and "user manual" not in heading_text_candidate.lower():
                 toc_lines_texts.append(line_content)
-                meaningful_toc_entries_count += 1
+                meaningful_toc_entries_count +=1
                 non_match_count = 0
             else:
                 non_match_count = 0
         else:
             if meaningful_toc_entries_count > 5:
                 non_match_count += 1
+                logging.debug(f"Non-TOC pattern line at {current_idx}: '{line_content}'. Non-match count: {non_match_count}")
                 if non_match_count >= consecutive_non_match_limit:
-                    logging.info(f"Stopping TOC scan at line {current_idx} after {consecutive_non_match_limit} non-matching lines.")
+                    logging.info(f"Stopping TOC scan at line {current_idx} after {consecutive_non_match_limit} consecutive non-matching lines: '{line_content}'. Collected {len(toc_lines_texts)} TOC entries.")
                     break
-            elif not line_content.isupper() and len(line_content) > 60:
-                non_match_count += 1
-                if non_match_count >= 2 and meaningful_toc_entries_count < 3:
-                    logging.info(f"Stopping TOC scan early due to non-matching lines with few entries found.")
+            elif not line_content.isupper() and len(line_content) > 60 :
+                 non_match_count +=1
+                 if non_match_count >= 2 and meaningful_toc_entries_count < 3:
+                    logging.info(f"Stopping TOC scan early due to non-matching lines with few entries found. Line {current_idx}: '{line_content}'")
                     break
         current_idx += 1
-
+    
     if not toc_lines_texts:
         logging.error("No valid Table of Contents entries extracted.")
         return []
@@ -1451,12 +1616,12 @@ def parse_manual(manual_text_content: str):
                     first_heading_actual_pos = i
                     break
             if first_heading_actual_pos != -1:
-                content_search_start_offset = first_heading_actual_pos
-                logging.info(f"Adjusted content search start offset based on first TOC heading.")
+                 content_search_start_offset = first_heading_actual_pos
+                 logging.info(f"Adjusted content search start offset based on first TOC heading '{extracted_headings_info[0][0]}' found at line ~{first_heading_actual_pos}.")
             else:
-                logging.warning(f"First TOC heading not found after TOC.")
+                 logging.warning(f"First TOC heading '{extracted_headings_info[0][0]}' not definitively found after TOC. Using default content search offset after TOC block.")
         except Exception as e:
-            logging.error(f"Error finding first TOC heading position: {e}")
+            logging.error(f"Error trying to find first TOC heading position: {e}")
 
     current_search_line = content_search_start_offset
     found_headings_indices = set()
@@ -1467,18 +1632,19 @@ def parse_manual(manual_text_content: str):
             for i in range(current_search_line, len(content_lines_upper_stripped)):
                 if i in found_headings_indices:
                     continue
-                if content_lines_upper_stripped[i] == match_heading_upper and len(content_lines_stripped[i]) < 150:
+                if content_lines_upper_stripped[i] == match_heading_upper and len(content_lines_stripped[i]) < 150 :
                     found_line_idx = i
                     found_headings_indices.add(i)
-                    break
+                    break 
+            
             if found_line_idx != -1:
                 section_positions.append((display_heading, found_line_idx))
             else:
-                logging.warning(f"Heading '{display_heading}' not found in manual content.")
+                logging.warning(f"Heading '{display_heading}' (uppercase: '{match_heading_upper}') not found as a standalone heading in manual content (searched from line {current_search_line}).")
         except Exception as e:
             logging.error(f"Error finding position for heading '{display_heading}': {e}")
-        if found_line_idx != -1:
-            current_search_line = found_line_idx + 1
+        if found_line_idx != -1 :
+             current_search_line = found_line_idx + 1
 
     section_positions.sort(key=lambda x: x[1])
 
@@ -1500,14 +1666,18 @@ def parse_manual(manual_text_content: str):
         if content_text:
             parsed_sections.append((heading_display, content_text))
         else:
-            logging.info(f"Section '{heading_display}' resulted in no content after parsing.")
+            logging.info(f"Section '{heading_display}' resulted in no content after parsing (lines {content_block_start_line}-{content_block_end_line}). This might be a container heading or formatting issue.")
 
-    logging.info(f"Successfully parsed {len(parsed_sections)} sections.")
+    logging.info(f"Successfully parsed {len(parsed_sections)} sections with content from the manual.")
+    if not parsed_sections and extracted_headings_info:
+        logging.warning("Headings were extracted from TOC, but no content sections were parsed. Check heading matching logic in content.")
     return parsed_sections
 
 # --- Q&A Function ---
 def answer_question(question: str, section_data: list, threshold=0.40, top_n=3):
-    logging.info(f"Embedding question: '{question}'")
+    logging.info(f"Embedding question for Gemini: '{question}'")
+    
+    # Get question embedding for retrieval
     try:
         result = genai.embed_content(
             model=EMBEDDING_MODEL,
@@ -1516,7 +1686,7 @@ def answer_question(question: str, section_data: list, threshold=0.40, top_n=3):
         )
         question_embedding = np.array(result['embedding'])
     except Exception as e:
-        logging.error(f"Error generating question embedding: {str(e)}")
+        logging.error(f"Error generating question embedding: {e}")
         return "I encountered an issue processing your question with the embedding model. Please try again."
 
     similarities = []
@@ -1528,15 +1698,16 @@ def answer_question(question: str, section_data: list, threshold=0.40, top_n=3):
             similarity = 1 - cosine(question_embedding, embedding)
             similarities.append((similarity, heading, content))
         except Exception as e:
-            logging.error(f"Error calculating cosine similarity for section '{heading}': {str(e)}")
+            logging.error(f"Error calculating cosine similarity for section '{heading}': {e}.")
             continue
 
     if not similarities:
-        logging.warning("No sections with valid embeddings available.")
+        logging.warning("No sections with valid embeddings available to compare against.")
         return "The user manual content could not be searched at this time due to an issue with section embeddings."
 
     similarities.sort(key=lambda x: x[0], reverse=True)
-    logging.info(f"Top {top_n} similarities for question '{question}':")
+
+    logging.info(f"Top {top_n} potential similarities for question '{question}':")
     for i, (sim_score, head, _) in enumerate(similarities[:top_n]):
         logging.info(f"  {i+1}. Similarity: {sim_score:.4f} with Section: '{head}'")
 
@@ -1549,11 +1720,11 @@ def answer_question(question: str, section_data: list, threshold=0.40, top_n=3):
                 "similarity": sim_score
             })
         else:
-            break
-
+            break 
+            
     if not relevant_sections_info:
         highest_sim_score = similarities[0][0] if similarities else -1.0
-        logging.info(f"No sections found above threshold {threshold}. Highest similarity: {highest_sim_score:.4f}.")
+        logging.info(f"No sections found above threshold {threshold} among the top {top_n} candidates. Highest similarity was {highest_sim_score:.4f}.")
         return "I've searched the VedCool user manual, but I couldn't find specific information that directly addresses your question in the available excerpts."
 
     combined_context = ""
@@ -1571,73 +1742,100 @@ def answer_question(question: str, section_data: list, threshold=0.40, top_n=3):
         f"1. Base your answer *only* on the text provided in the 'CONTEXT FROM MANUAL' section(s) below.\n"
         f"2. Answer the 'USER'S QUESTION' concisely and accurately.\n"
         f"3. If the answer is found across multiple provided sections, synthesize the information smoothly.\n"
-        f"4. If the provided context directly answers the question, provide the answer directly.\n"
-        f"5. If the provided context mentions the topic but does not contain the specific details to fully answer the question, state what information is available and what is missing.\n"
-        f"6. If the provided context does not contain any relevant information to answer the question, clearly state that the information is not found in the provided excerpts of the manual.\n"
+        f"4. If the provided context directly answers the question, provide the answer directly. Start your answer without preamble like 'Based on the manual...' unless it's natural.\n"
+        f"5. If the provided context mentions the topic but does not contain the specific details to fully answer the question, state what information is available and what is missing. For example, if the manual says 'refer to image for details' and the image content is not provided as text, state that the details appear to be in an image which is not accessible here.\n"
+        f"6. If the provided context does not contain any relevant information to answer the question, clearly state that the information is not found in the provided excerpts of the manual. Do not apologize excessively.\n"
         f"7. Do not use any outside knowledge or make assumptions beyond the provided text.\n"
         f"8. Present answers in a clear, well-formatted way. Use bullet points for steps or lists if appropriate.\n\n"
         f"CONTEXT FROM MANUAL:\n{combined_context}\n\n"
         f"USER'S QUESTION: \"{question}\"\n\n"
         f"PROFESSIONAL AND CLEAR ANSWER:"
     )
-    logging.info(f"Generating response using section(s): {', '.join(log_message_context_parts)}")
+    logging.info(f"Generating Gemini response using section(s): {', '.join(log_message_context_parts)}")
     response = generate_response_with_retry(prompt=prompt_for_llm)
     return response
 
 # --- Main Execution ---
 if __name__ == "__main__":
     parsed_manual_sections = parse_manual(manual_text)
+
     if not parsed_manual_sections:
-        logging.error("No sections parsed from manual. Exiting.")
+        logging.error("No sections were parsed from the manual. Chatbot cannot proceed.")
+        print("Error: Unable to parse the manual. Please check the logs. Ensure 'TABLE OF CONTENT' exists and TOC entries are clear.")
         sys.exit(1)
 
     section_data_for_chatbot = []
+
     if os.path.exists(EMBEDDINGS_CACHE_FILE):
         try:
             with open(EMBEDDINGS_CACHE_FILE, 'rb') as f:
                 loaded_data = pickle.load(f)
-            if isinstance(loaded_data, list) and all(isinstance(item, tuple) and len(item) == 3 for item in loaded_data):
+            if isinstance(loaded_data, list) and \
+               (not loaded_data or \
+                (all(isinstance(item, tuple) and len(item) == 3 and isinstance(item[0], str) and isinstance(item[1], str) and isinstance(item[2], np.ndarray) for item in loaded_data))):
                 section_data_for_chatbot = loaded_data
-                logging.info(f"Loaded {len(section_data_for_chatbot)} embeddings from cache.")
+                logging.info(f"Loaded {len(section_data_for_chatbot)} Gemini embeddings from cache: {EMBEDDINGS_CACHE_FILE}")
             else:
-                logging.warning("Cached data invalid. Recomputing embeddings.")
+                logging.warning(f"Cached Gemini data in '{EMBEDDINGS_CACHE_FILE}' is not in the expected format. Recomputing.")
+                section_data_for_chatbot = []
+
+            if section_data_for_chatbot:
+                if len(section_data_for_chatbot) != len(parsed_manual_sections):
+                    logging.warning(f"Cached Gemini embeddings count ({len(section_data_for_chatbot)}) does not match current parsed sections count ({len(parsed_manual_sections)}). Recomputing all.")
+                    section_data_for_chatbot = []
+                else:
+                    cached_headings = [item[0] for item in section_data_for_chatbot]
+                    parsed_headings = [item[0] for item in parsed_manual_sections]
+                    if cached_headings != parsed_headings:
+                        logging.warning("Headings or their order in Gemini cache do not match current parsed headings. Recomputing all.")
+                        section_data_for_chatbot = []
+        except (pickle.UnpicklingError, EOFError, AttributeError, ImportError, IndexError, TypeError) as e:
+            logging.error(f"Error loading or validating Gemini embeddings cache '{EMBEDDINGS_CACHE_FILE}': {e}. Recomputing.")
+            section_data_for_chatbot = []
         except Exception as e:
-            logging.error(f"Error loading embeddings cache: {str(e)}")
+            logging.error(f"Unexpected error loading or validating Gemini embeddings cache '{EMBEDDINGS_CACHE_FILE}': {e}. Recomputing.")
             section_data_for_chatbot = []
 
     if not section_data_for_chatbot:
-        logging.info("Computing embeddings for manual sections...")
+        logging.info("Computing Gemini embeddings for manual sections...")
+        temp_section_data = []
         for i, (heading, content) in enumerate(parsed_manual_sections):
-            logging.info(f"Processing section {i+1}/{len(parsed_manual_sections)}: '{heading}'")
+            logging.info(f"Processing section {i+1}/{len(parsed_manual_sections)}: '{heading}' for Gemini embedding.")
             text_to_embed = f"Section Title: {heading}\n\nContent:\n{content}"
             truncated_text = truncate_text_to_tokens(text_to_embed, MAX_TOKENS_FOR_EMBEDDING)
             if len(truncated_text) < len(text_to_embed):
-                logging.warning(f"Truncated section '{heading}' from {len(text_to_embed)} to {len(truncated_text)} chars.")
+                logging.warning(f"Text for section '{heading}' was truncated from {len(text_to_embed)} chars to {len(truncated_text)} chars to fit token limit ({MAX_TOKENS_FOR_EMBEDDING} tokens).")
+
             if not truncated_text.strip():
-                logging.warning(f"Skipping empty section '{heading}' after truncation.")
+                logging.warning(f"Skipping embedding for section '{heading}' as text became empty after truncation or was initially empty.")
                 continue
+            
             try:
                 embedding_array = get_embedding_with_retry(text=truncated_text)
                 if embedding_array is not None and embedding_array.size > 0:
-                    section_data_for_chatbot.append((heading, content, embedding_array))
+                    temp_section_data.append((heading, content, embedding_array))
                 else:
-                    logging.warning(f"Failed to compute embedding for section: {heading}.")
+                    logging.warning(f"Failed to compute or got empty/invalid Gemini embedding for section: {heading}. It will be excluded.")
             except Exception as e:
-                logging.error(f"Failed to embed section '{heading}': {str(e)}")
-                continue
+                 logging.error(f"All retries failed for embedding section '{heading}': {e}. This section will be excluded.")
+
+        section_data_for_chatbot = temp_section_data
 
         if section_data_for_chatbot:
             try:
                 with open(EMBEDDINGS_CACHE_FILE, 'wb') as f:
                     pickle.dump(section_data_for_chatbot, f)
-                logging.info(f"Embeddings saved to {EMBEDDINGS_CACHE_FILE}")
+                logging.info(f"Gemini embeddings computed and saved to cache: {EMBEDDINGS_CACHE_FILE}")
             except Exception as e:
-                logging.error(f"Error saving embeddings: {str(e)}")
+                logging.error(f"Error saving Gemini embeddings to cache '{EMBEDDINGS_CACHE_FILE}': {e}")
         else:
-            logging.error("No embeddings computed. Chatbot may not function correctly.")
+            logging.error("No Gemini embeddings were successfully computed for any section. The chatbot may not function correctly.")
 
     if section_data_for_chatbot:
-        print("\nVedCool Chatbot ready! Ask your question.")
+        print("\nVedCool Chatbot (Gemini Edition) is ready! Ask your question.")
+        print("Type 'exit' or 'quit' to stop.")
+        print(f"Using threshold: 0.40, top_n: 3 for context retrieval.")
+        print("Note: API usage is subject to Google AI quotas and billing.\n")
         while True:
             try:
                 question = input("Your question: ").strip()
@@ -1647,14 +1845,17 @@ if __name__ == "__main__":
                 if not question:
                     print("Please enter a valid question.")
                     continue
+
+                logging.info(f"--- Processing question with Gemini: {question} ---")
                 answer = answer_question(question, section_data_for_chatbot, threshold=0.40, top_n=3)
                 print(f"\nResponse:\n{answer}\n")
+
             except KeyboardInterrupt:
-                print("\nExiting...")
+                print("\nInterrupted by user. Exiting...")
                 break
             except Exception as e:
-                logging.error(f"Unexpected error: {str(e)}")
-                print("An error occurred. Please try again.")
+                logging.error(f"Unexpected error in main loop: {e}", exc_info=True)
+                print("An unexpected error occurred. Please check the logs and try again.")
     else:
-        logging.error("No section data available. Exiting.")
-        print("Error: No section data available. Check logs for errors.")
+        logging.error("Cannot start chatbot as no section data with Gemini embeddings is available.")
+        print("Error: No section data available to answer questions. Please check logs for parsing or embedding errors. The manual might be empty or unparseable.")
