@@ -1737,20 +1737,38 @@ def answer_question(question: str, section_data: list, threshold=0.40, top_n=3):
         log_message_context_parts.append(f"'{section_info['heading']}' (Sim: {section_info['similarity']:.4f})")
 
     prompt_for_llm = (
-        f"You are a professional and helpful AI assistant for the VedCool platform. Your goal is to provide clear, concise, and easy-to-understand answers to user questions based *exclusively* on the provided excerpts from the VedCool user manual.\n\n"
+        f"You are a professional and helpful AI assistant for the VedCool platform. "
+        f"Your goal is to provide clear, concise, and easy-to-understand answers to user questions "
+        f"based *exclusively* on the provided excerpts from the VedCool user manual.\n\n"
+
         f"Follow these instructions carefully:\n"
         f"1. Base your answer *only* on the text provided in the 'CONTEXT FROM MANUAL' section(s) below.\n"
         f"2. Answer the 'USER'S QUESTION' concisely and accurately.\n"
         f"3. If the answer is found across multiple provided sections, synthesize the information smoothly.\n"
-        f"4. If the provided context directly answers the question, provide the answer directly. Start your answer without preamble like 'Based on the manual...' unless it's natural.\n"
-        f"5. If the provided context mentions the topic but does not contain the specific details to fully answer the question, state what information is available and what is missing. For example, if the manual says 'refer to image for details' and the image content is not provided as text, state that the details appear to be in an image which is not accessible here.\n"
-        f"6. If the provided context does not contain any relevant information to answer the question, clearly state that the information is not found in the provided excerpts of the manual. Do not apologize excessively.\n"
-        f"7. Do not use any outside knowledge or make assumptions beyond the provided text.\n"
-        f"8. Present answers in a clear, well-formatted way. Use bullet points for steps or lists if appropriate.\n\n"
+        f"4. If the provided context directly answers the question, provide the answer directly. "
+        f"Start your answer without preamble like 'Based on the manual...' unless it's natural.\n"
+        f"5. If the provided context mentions the topic but does not contain specific details, "
+        f"state what information is available and what appears missing. "
+        f"For example: if it says 'refer to image for details', mention that the image is not accessible.\n"
+        f"6. If no relevant information is present, clearly state that the answer is not found in the provided excerpts. "
+        f"Do not use external knowledge.\n"
+        f"7. Present your answer in clean, structured HTML suitable for a website display — not plain text.\n\n"
+
+        f"HTML OUTPUT RULES:\n"
+        f"- Always wrap the full response inside a single <div class='vedcool-answer'> tag.\n"
+        f"- Use <h2> for a short, meaningful heading summarizing the answer (or question topic).\n"
+        f"- Use <p> for short explanatory paragraphs.\n"
+        f"- Use <ul> or <ol> for lists or step-by-step answers.\n"
+        f"- Use <strong> for key terms or important phrases.\n"
+        f"- If context is missing, still reply in HTML (e.g., <p><strong>Information not found</strong> in the provided manual excerpts.</p>).\n"
+        f"- Keep it professional, visually clear, and concise. No markdown or additional commentary.\n\n"
+
         f"CONTEXT FROM MANUAL:\n{combined_context}\n\n"
         f"USER'S QUESTION: \"{question}\"\n\n"
-        f"PROFESSIONAL AND CLEAR ANSWER:"
+        f"RESPOND BELOW IN HTML FORMAT ONLY:\n"
+        f"<div class='vedcool-answer'>...</div>"
     )
+
     logging.info(f"Generating Gemini response using section(s): {', '.join(log_message_context_parts)}")
     response = generate_response_with_retry(prompt=prompt_for_llm)
     return response
